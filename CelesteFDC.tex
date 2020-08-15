@@ -1,9 +1,12 @@
 \documentclass[oneside]{book}
 
+\usepackage{amsmath}
 \usepackage{array}
 \usepackage{float}
-\usepackage{todonotes}
 \usepackage{makecell}
+\usepackage{todonotes}
+\usepackage{verbatim}
+
 
 \newcommand{\s}{\textbf{s}}
 \newcommand{\su}{\textbf{u}}
@@ -81,6 +84,10 @@ The next table shows information for how Madeline's vertical speed changes
 \hline
 Gravity&+15.00 \s/f\\
 \hline
+Half Gravity&+7.50 \s/f\\
+\hline
+Gravity Halving Between&[-40.00,+40.00] \s\\
+\hline
 Terminal Fall Speed&+160.00 \s\\
 \hline
 Fast Fall Acceleration&5.00 \s/f\\
@@ -91,16 +98,35 @@ Fast Fall Speed&+240.00 \s\\
 \caption{Vertical speed}
 \end{table}
 
-If you are falling slower than 160, you will accelerate at the rate of gravity whether or not you are holding down. However, this can be affected by holding jump at certain times, see \textit{jumping}.\todo{figure out how to link things like this} If your speed is between 160 and 240, you will accelerate +5\s/f if you are holding down, or -5\s/f if you are not holding down, until reaching one of these terminal speeds.
+If Madeline is falling slower than +160, she will usually accelerate at the rate of gravity. However, if Madeline's vertical speed is between -40 and +40, holding the jump button will cause the acceleration of gravity to be cut in half so that she only accelerates at 7.50 \s/f. This makes Madeline feel slightly more "floaty" at the top of her jump. This affect is applied whenever Madeline is airborne regardless of the cause.
 
-Your speed must land on 160 for at least one frame before entering fast fall, it will not roll over. If you are traveling at 150 and hold down, you will be going 160 on the next frame, and then 165 on the next.
+Holding down does not affect Madeline's fall until she reaches +160 speed. At this point, holding down causes her to accelerate +5 \s/f until she reaches the fast fall speed of +240. Subsequently releasing down will cause her to decelerate at -5 \s/f until she returns to the terminal fall speed. Madeline's speed must land on 160 for at least one frame before entering fast fall, it will not roll over. If she is falling at +150 and down is pressed, she will be going +160 on the next frame, and then +165 on the next.
 
 \chapter{Basic Mechanics}
 
 \section{Jump}
 
-Pressing and holding jump has the following behavior:
+Jumping from the ground is one of Madeline's three basic moves.
 
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Initial Jump&-105.00 \s\\
+\hline
+Rise Duration&12 frames\\
+\hline
+Speed Boost&40.00 \s\\
+
+\hline
+Buffer Window&5 frames\\
+\hline
+\end{tabular} 
+\caption{Basic Jump Data}
+\end{table}
+
+
+
+\begin{comment}
 \begin{table}[h]
 \begin{tabular}{|l|l|}
 \hline
@@ -125,23 +151,11 @@ Frame&Y Speed\\
 \end{tabular}
 \caption{Vertical Jump Speeds}
 \end{table}
+\end{comment}
 
-If the jump button is released any time during the jump, Madeline will immediately begin to accelerate downwards at the rate of gravity (+15.00\s /f). However, if the jump button is held whenever Madeline's speed is between -40.00 and +40.00, gravity is halved to +7.50 \s/f  for the next frame, no matter what caused Madeline to become airborne.
+Madeline's initial vertical speed is -105. So long as the jump button is held, Madeline will not be affected by gravity during the rise duration and her upward speed will not change. She will begin to accelerate down at the rate of gravity on frame 13, but if the jump button is still held, gravity halving will apply at the top of the jump arc (frames 18-27). If the jump button is released any time during the jump, Madeline will immediately begin to accelerate downwards at the rate of gravity (+15.00\s /f). If left or right is held during the jump, Madeline will get a boost of 40 speed in that direction.
 
-Madeline can jump up to a height of slightly higher than 3 tiles. When jumping off the ground, Madeline gains +40.00 speed in whatever horizontal direction the player is currently holding, if any. The jump can be buffered up to 5 frames early and Madeline will jump on the first possible frame.
-
-\begin{table}[h]
-\begin{tabular}{|l|l|}
-\hline
--26.75 px&Max Height\\
-\hline
-+40.00 \s &Horizontal Jump Boost\\
-\hline
-5 frames&Buffer Window\\
-\hline
-\end{tabular}
-\caption{Miscellaneous Jump Data}
-\end{table}
+Madeline can jump up to a height of slightly higher than 3 tiles. The maximum height can be calculated by summation. The jump can be buffered up to 5 frames early and Madeline will jump on the first possible frame.
 
 \subsection{Jumping from Walls}
 
@@ -157,7 +171,7 @@ Madeline can jump from walls even from 2 pixels away.
 
 \subsection{Wall Jump}
 
-\textit{Wall Jumping} sends Madeline away from the wall at a speed of 130. For the next 12 frames, she will decelerate at the rate of air friction until reaching the walking speed of 90, regardless of right/left inputs. Madeline also immediately turns around to face away from the wall.
+\textit{Wall Jumping} sends Madeline away from the wall at a speed of 130. For the next 11 frames, she will decelerate at the rate of air friction until reaching the walking speed of 90, regardless of right/left inputs. Madeline also immediately turns around to face away from the wall.
 
 \begin{table}[h]
 \begin{tabular}{|l|l|l|}
@@ -210,6 +224,8 @@ Dashing lasts for 15 frames. The following table shows the different stages of a
 \hline
 Frame&Event\\
 \hline
+-4-0&Buffer Window\\
+\hline
 1&Startup\\
 \hline
 2-4&Freeze Frames\\
@@ -224,18 +240,7 @@ Frame&Event\\
 \caption{Dash Breakdown}
 \end{table}
 
-Madeline stops moving the same frame that the button is pressed. On frames 2-4, the entire game including the speedrun clock is frozen. During frames 5-15 Madeline is in the dash state and maintains a fixed trajectory. If Madeline leaves the ground before frame 10 her dash will not recharge, but if she leaves the ground on or before frame 10 the dash will be recharged. Madeline's dash speed ends on frame 15, although other dash mechanics still apply on this frame: for example, she can still hyper or super, and she cannot start a new dash until the next frame.
-
-Dashes can also be buffered up to 5 frames early, like jumps.
-
-\begin{table}[h]
-\begin{tabular}{|l|l|}
-\hline
-5 frames&Buffer Window\\
-\hline
-\end{tabular}
-\caption{Miscellaneous Dash Data}
-\end{table}
+Madeline stops moving the same frame that the button is pressed. On frames 2-4, the entire game including the speedrun clock is frozen. During frames 5-15 Madeline is in the dash state and maintains a fixed trajectory. If Madeline leaves the ground before frame 10 her dash will not recharge, but if she leaves the ground on or before frame 10 the dash will be recharged. Madeline's dash speed ends on frame 15, although other dash mechanics still apply on this frame: for example, she can still hyper or super, and she cannot start a new dash until the next frame. Dashes can also be buffered up to 5 frames early, like jumps.
 
 \subsection{Horizontal Speed}
 
@@ -244,6 +249,10 @@ The $x$ speed for horizontal and diagonal dashes is actually only a minimum: If 
 For example, if Madeline starts a horizontal dash while traveling at 200 speed, she will immediately be set to 240, the minimum. However, if she dashes diagonally, the dash speed will be (200,169.71). Therefore, she will not dash at a 45 degree angle. The horizontal speed will not change for the duration of the dash.
 
 Furthermore, Madeline's horizontal speed is immediately set to 160 on the end frame, regardless of how fast she was going during the dash. When an up-diagonal dash ends, her horizontal speed is set to $\frac{\sqrt{2}}{2}\cdot 160.00=113.14$ and her vertical speed is set to -84.85. When a down-diagonal dash ends, Madeline's horizontal speed is not reset so long as she is in the air (If she is grounded, it is set to 160). This is a critical component of Ultras, see \textit{Ultra (Disambiguation)}.
+
+\subsection{Dash Redirect}
+
+The first 4 frames of a dash are stationary; the dash does not start until the 5th frame. The game actually does not determine what direction the dash will go in until the 5th frame, therefore it is possible to switch directions in the time between pressing dash and this first active frame. This is called \textit{Dash Redirecting,} it is a forgiveness mechanic designed so that if the player accidentally presses dash slightly before pressing the direction they intend to go, the dash will go in the intended direction.
 
 \section{Climbing}
 
@@ -307,8 +316,22 @@ The unifying theme between these mechanics and what separates them from the "Tec
 
 \section{Wall Bounce}
 
-A wall bounce is executed by dashing straight up while next to a wall, and jumping off the wall while in the dash state. Wall bounces are fast and give a great amount of height, therefore they can be required in maps. They are taught on flag 8 in 7B and also required for flag 7, some C-sides and Farewell.
+A wall bounce is executed by dashing straight up while next to a wall, and jumping off the wall while in the dash state. Wall bounces are fast and give a great amount of height, therefore they can be required in maps. They are taught on flag 8 in 7B and also required for flag 7, some C-sides and Farewell. Wall bouncing creates "speed rings" behind Madeline.
 
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Initial Speed&170.00 \s\\
+\hline
+Initial Jump&-160.00 \s\\
+\hline
+Rise Duration&15 frames\\
+\hline
+\end{tabular} 
+\caption{Wall Bounce Speeds}
+\end{table}
+
+\begin{comment}
 \begin{table}[h]
 \begin{tabular}{|l|l|}
 \hline
@@ -329,6 +352,7 @@ Horizontal Speed&170.00\\
 \end{tabular} 
 \caption{Wall Bounce Sequence}
 \end{table}
+\end{comment}
 
 Wall bouncing gives an initial vertical speed of -160.00 which can be maintained for the first 15 frames by holding jump. Then normal gravity kicks in, with gravity halving applying to the top of the jump as usual. Releasing jump early causes gravity to start immediately. The table shows vertical speeds assuming the jump button is held for the entire sequence.
 
@@ -348,7 +372,7 @@ Wall Bounce Forgiveness&5 px\\
 Total& 10 px\\
 \hline
 \end{tabular}
-\caption{Wall Bounce Spacing}
+\caption{Wall Bounce Positioning}
 \end{table}
 
 Horizontal alignment for wall bounces is incredibly forgiving: The player has a 10 pixel margin (larger than a tile) to line up a wall bounce. If the player is further than 4 pixels "under" the wall, Madeline will "bonk" her head, and more than 5 pixels away will result in no jump. If there are spikes or spinners under the wall, corner correction is not available, and the wall bounce margin is reduced to 6 pixels. If Madeline is dashing up towards a zig-zag of one tile wide ledges, the possibility to wall bounce is guaranteed.
@@ -357,21 +381,165 @@ Wall bounces can also be started up to 5 frames after the dash ends, therefore u
 
 \section{Hyper Dash}
 
+A hyper dash, often simply called a "hyper," is executed by dashing down-diagonal along the ground, and then jumping while in the dash state. This sends Madeline forward at a fixed speed with reduced jump height. A hyper also creates speed rings behind Madeline. This mechanic is taught in 8C and not explicitly required elsewhere in the base game besides Farewell (which teaches it's variant the "wavedash"), although it's incredibly useful for multiple reasons.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Initial Speed&325.00 \s\\
+\hline
+Initial Jump&-52.50 \s\\
+\hline
+Rise Duration&12 frames\\
+\hline
+Max Height&-12.38 px\\
+\hline
+Max Distance&$\approx$ 17 tiles\\
+\hline
+\end{tabular}
+\caption{Hyper Speeds}
+\end{table}
+
+A hyper gives a fixed speed of 325 horizontally and can be controlled immediately. The initial jump speed of a hyper is half that of a normal jump and the rise duration is equally as long, which means a hyper should go slightly less than half the height of a normal jump. The maximum height turns out to be a little bit over 1.5 tiles. The maximum distance is only an estimate assuming Madeline is on flat ground - She lands at approximately 131 pixels (between 16 and 17 tiles). This distance is slightly more than can be covered by jumping and dashing up-diagonal. Maximum height and distance were determined experimentally but could be calculated by summation.
+
 \subsection{Extending}
+
+One of the most important factors for making hypers viable is the concept of extending. This means jumping from the ground after the dash cooldown has ended, so that the dash recharges before leaving the ground. This grants Madeline another dash in the air.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Frame&Event\\
+\hline
+1-4&Startup and Freeze\\
+\hline
+5-9&Not Extended\\
+\hline
+10-15&Extended Hyper\\
+\hline
+\end{tabular}
+\caption{Extended Timing}
+\end{table}
+
+Jumping on frames 10-15 extends the hyper and Madeline will be able to dash again, while jumping on frames 5-9 causes Madeline to have no dash in the air. In order to extend, Madeline must also have ground under her some time between frame 10 and the jump frame (inclusive); see \textit{Coyote} for more information. It is possible to do an extended hyper from a 2 tile wide platform, but Madeline must stand on the 3 edge pixels. Extending allows Madeline to cover more distance; with no environmental factors, an extended hyper followed by an up-diagonal dash is the most distance Madeline can cover in a single jump. or to execute another move after hypering, such as a wall bounce or another hyper. Doing an extended hyper involves a short "slide" across the ground. It is something that most players can execute consistently from muscle memory with practice.
 
 \subsection{Wavedash}
 
+Wavedashing is taught at the beginning of the Event Horizon checkpoint in Farewell. Although the setup is different than a hyper, it's essentially the same thing. A wavedash starts by dashing down-diagonal into the ground, then landing and jumping before the dash ends. The trajectory is identical to a hyper.
+
+Wavedashing provides two practical advantages to doing an extended hyper: The first is that an extended hyper requires some ground to slide across while a wavedash does not; it is possible to wavedash from a 1 tile platform by dashing down-diagonal onto it, and much easier to wavedash from a 2 tile platform than to try to stand on the edge and extended hyper. The other advantage to wavedashing is that the jump can be buffered, therefore so long as the dash is initiated from the correct height, the window to do a wavedash is larger than with an extended hyper. For example: say the dash is positioned so that Madeline lands on frame 11. Then jump can be pressed anywhere between frames 7-15 This can be contrased against doing an extended hyper, where the hyper will start if jump is pressed on frames 7-9, but won't extend.
+
+It is possible to start another wavedash from the air from a previous wavedash. Chaining wavedashes together is often significantly faster than simply dashing forward, and is the fastest way to travel on flat ground, neglecting environmental factors, besides using \textit{Grounded Ultras}.
+
 \section{Super Dash}
 
-\section{Reversal}
+Super Dashing is never explicitly taught in the base game, but many people discover it through messing around. A super dash, or just "super," is simply a dash followed by a jump, essentially a hyper without holding down. In contrast to a hyper, a super goes slower and higher, making it another option for different applications. The trajectory is different, but the frame data is essentially the same. Supers can be extended in the same way as hypers. Supers also produce speed rings behind Madeline.
+
+The term "Super Dash" may cause a little confusion since there is an option in the Variants menu called "Super Dashing" which causes Madeline's dash to become longer and controllable. However, this variant is generally less relevant and so in this document it will be referred to as \textit{Super Dashing Variant} and treated in a later chapter.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Initial Speed&260.00 \s\\
+\hline
+Initial Jump&-105.00 \s\\
+\hline
+Rise Duration&12 frames\\
+\hline
+Max Height&-26.75 px\\
+\hline
+Max Distance&$\approx$ 15 tiles\\
+\hline
+\end{tabular}
+\caption{Super Speeds}
+\end{table}
+
+The speed from a super is slightly higher than that of a regular horizontal dash. The jump height is identical to the height of a normal jump, and therefore the trajectory is the same, including the maximum height. The distance obtainable from a super is slightly less than a hyper, and about the same as jumping and dashing up-diagonal, but by extending the super Madeline can go further.
+
+\subsection{Midair Super}
+
+Similar to a wavedash, a super can be started from the air. However since Madeline is dashing horizontally, this means she must be lined up with the ground, so that she reaches the ground and is able to jump off it. It is more precise than a wavedash, but \textit{Corner Correction} makes it easier. This makes it possible to do extended supers from platforms which are too narrow to do a standing extended super from. Midair supers have some applications in speedrunning and custom maps.
+
+\section{Reverse}
+
+Hypers, Wavedashes and Supers all have an interesting property that they can be \textit{Reversed}. This means dashing in one direction, then doing the hyper/wavedash/super in the opposite direction. When Madeline jumps, the game only checks to see if she is dashing (and whether it is a horizontal or down-diagonal dash) and which direction is being held, the direction of the dash doesn't matter.
+
+To execute a reverse, simply dash in one direction, then press in the opposite direction and jump. The new direction must be pressed before jumping, or on the same frame.
+
+Reversing makes it possible to get an extended hyper or super from a platform which is too narrow but has a wall on one side; by dashing into the wall, it is possible to run out the cooldown timer before jumping in the other direction.
+
+Reversing has some applications in speedrunning. It is also a very popular mechanic to include in custom maps.
 
 \section{Ultra (Disambiguation)}
 
+\textit{Ultras} are a mechanic that were originally not intended, but after they were discovered they became an accepted part of the game by the developers and the community. This is probably because ultras are fun, skill-based, and allow Madeline to go very fast.
+
+Unfortunately, the term "Ultra" is somewhat ambiguous. Unlike a hyper, there are several factors that generally constitute an ultra, and it is not always agreed upon which factors are necessary for a move to be an ultra. So in this entry, I will try to list the factors that usually contribute to a move being called an "ultra" and break down how each specific element works.
+
+The typical ultra sequence is as follows:
+
+\begin{itemize}
+\item[1.]Start with speed. The easiest way to get some kind of speed is to simply do an extended hyper, but another way to go fast is to utilize \textit{Block Boosts,} or have speed from a previous ultra.
+\item[2.]Do a down-diagonal dash from the air. Due to \textit{Horizontal Speed Preservation}, the dash will be stretched, at an angle between 0 and 45 degrees (closer to horizontal the faster Madeline is going). Occasionally people refer to simply this stretched dash as an "ultra" without requiring the following steps.
+\item[3.]The dash ends before landing. Again due to \textit{Horizontal Speed Preservation}, Madeline's speed is not lost, since the dash was down-diagonal.
+\item[4.]Madeline lands and the \textit{Ultra Boost} is applied, multiplying Madeline's speed by 1.2.
+\item[5.]Madeline jumps and gains an additional 40 speed. This is a normal jump, therefore full height with no speed rings. Jumping is not actually necessary; Madeline can instead slide along the ground. However due to the 40 speed boost and since friction is lower in the air, jumping makes Madeline go faster.
+\end{itemize}
+
+Here are some facts about ultras:
+
+\begin{itemize}
+\item[1.]The ultra boost is multiplicative, therefore by chaining ultras it is possible to increase speed without limit. In contrast, the hyper boost is constant, therefore chained hypers/wavedashes cannot go faster than a fixed speed.
+\item[2.]If the dash \textit{does not end} before landing and Madeline jumps \textit{during} the dash, it will be a wavedash. If the dash ends \textit{while} landed, Madeline will be slowed to 160 speed and be unable to wavedash or ultra. Only when the dash ends \textit{before} landing will it be an ultra.
+\item[3.]Due to the previous fact, ultras must be performed from raised ground. The minimum height is about 28 pixels (3.5 tiles). Typically 3 tile height is enough to do a hyper into an ultra. When doing an ultra into an ultra, 1 tile height is the minimum, but it is easier to do with at least 2.
+\item[4.]One of the clearest ways to differentiate a wavedash from an ultra is that a wavedash has speed rings behind it while an ultra does not.
+\end{itemize}
+
 \subsection{Ultra Boost}
+
+Whenever Madeline dashes down-diagonal and then touches the ground, her speed gets multiplied by 1.2. This occurs whether or not Madeline is still in the dash state, or if the dash has finished or was \textit{Cancelled}. If Madeline is going slow this boost is not noticeable, but if she is going fast it is easy to see.
+
+There is a story that the 1.2 factor was programmed into the game so that dashing down-diagonal into the ground causes Madeline to slide a similar distance to a horizontal dash. However, so long as Madeline's \textit{most recent dash} was down-diagonal, the ultra boost will be applied when she lands.
+
+\subsection{Boost Bunny Hop}
+
+Ultras are not originally intended tech, and they don't work perfectly. One specific nuance of ultras is that it is possible in some scenarios to bunny hop upon landing (jump immediately or buffer a jump) and not get the ultra boost.
+
+This can happen if Madeline is 1 pixel above the ground on a specific frame. It is possible to jump on this frame, but the ultra boost will not be applied until the next frame when she actually lands, therefore if she jumps on this frame, she will not get the ultra boost.
+
+Once the dash ends, Madeline's downward speed is set to +160.00 (terminal speed), which is 2.66 pixels per frame. So for example, if Madeline is 2.40 pixels above the ground on a frame, then on the next frame she will become grounded and be able to jump and the ultra boost will be applied immediately. If however she is 3.20 pixels above the ground, then on the next frame she will be 0.54 pixels above the ground, and be able to bunny hop before getting the ultra boost on the next frame.
+
+It is very difficult to control Madeline's precise pixel position, and nearly impossible to control her subpixel position RTA. Assuming a random starting height, Madeline has a $\frac{1}{2.66}=\frac{3}{8}$ chance of arriving between 0 and 1 pixels above the ground. Therefore, if the player bunny hops or buffers the jump input, there is about a 3/8 chance to "bunny hop over" the ultra boost and miss it.
 
 \section{Demo Dash}
 
+\textit{Demo Dashing} is another unintended mechanic which has come to be an accepted part of the game by the Celeste developers and the community. The name "Demo" Dash is attributed to Chinese player DemoJameson who is credited for discovering it. A demo dash is a horizontal, up-diagonal or straight up dash where Madeline is crouched for the duration of the dash. This works due to two factors:
+
+\begin{itemize}
+\item[1.]If down is held when the dash is initiated, Madeline becomes crouched during the startup and freeze frames.
+\item[2.]If the dash is then \textit{redirected} to a non-down direction, Madeline remains crouched until the end of the dash.
+\end{itemize}
+
+The crouch affects Madeline's hitbox, making her smaller. If the demo dash is performed horizontally, there is a visual indication: the white dash line that normally appears behind Madeline at approximately her waist-level is lower, closer to her knee-level.
+
+Demo dashing has two major applications: The first is that by making Madeline's hurtbox smaller vertically, it is possible to dash between narrower gaps. The most well-known application of this is dashing between gaps in spinners, which are frequently 4 pixels high. The other application is performing a \textit{Demo Hyper,} a hyper from a demo dash, since Madeline is considered to be crouched for the duration. Due to how the game handles directional inputs, it is possible to bind a \textit{Demo Button} which uses \textit{Input Priority} to make is possible to do horizontal demo dashes without redirecting.
+
 \subsection{Demo Hyper}
+
+By using a demo dash, it is possible to do a horizontal dash into a hyper, rather than a super. This is called a \textit{Demo Hyper.} The properties of the hyper are identical to an ordinary hyper, but the dash leading up to it is slightly different. Since a demo dash is just a horizontal dash, it will travel along the ground at 240 speed, whereas a down-diagonal dash from standing will travel at $203.65=1.2\times169.71$. Also, it is possible to do a midair demo hyper in the same way one would do a midair super. This may be more useful than a wavedash in certain situations.
+
+\subsection{Demo Button}
+
+It is possible to use \textit{Input Priority} to bind a "demo dash" button which makes horizontal demos possible without manually redirecting. To do this, bind a button to press both dash and down with down being lower priority than the main control scheme. Here is the order of input priority: 
+
+\begin{align*}
+\text{Controller D-Pad} > \text{Controller Analog Stick}\\
+> \text{Keyboard Arrows} > \text{Keyboard Rebinds}
+\end{align*}
+
+For a keyboard player using arrow keys, the demo button can be bound in settings.celeste by binding any button to both down and dash. This rebind isn't possible in the settings menu of vanilla Celeste, but can be done with the latest version of Everest. For a controller player, the demo button can be bound by using a controller rebinder (such as JoyToKey) to bind any button to keyboard down and a keyboard dash button. Alternatively, the button can be bound to an arbitrary keyboard button, and that can be bound to both down and dash like before. For a keyboard player using a control scheme other than arrows (such as WASD), it is necessary to rebind the movement keys to arrows externally using hardware or a program like AutoHotkey.
+
+By holding left or right and pressing the demo button, it is possible to execute a horizontal demo dash without redirecting. This is because the down input from the demo button will be sent to put Madeline into crouch when starting the dash, but it will be overridden when the dash starts, resulting in a demo dash. Alternatively, the lower-priority down input could be bound to a separate key, which can be held while holding left or right and using the ordinary dash button.
 
 \chapter{Spike mechanics}
 
@@ -379,11 +547,23 @@ Wall bounces can also be started up to 5 frames after the dash ends, therefore u
 
 \chapter{Technical Mechanics}
 
-\section{Corner Correction}
-
 \section{Coyote}
 
+\section{Crouch Technicalities}
+
+\section{Corner Correction}
+
+\section{Snap to Ground}
+
+\section{Grounded Ultra}
+
 \section{Dash Cancel}
+
+\section{Delayed Ultra}
+
+\subsection{Theo/Jelly Ultra}
+
+\subsection{Cutscene Ultra}
 
 \section{Corner Boost}
 
@@ -400,6 +580,16 @@ Wall bounces can also be started up to 5 frames after the dash ends, therefore u
 \section{Water Boost}
 
 \section{Ceiling Pop}
+
+\subsection{Input Priority}
+
+When Celeste receives directional input from two different sources, one gets prioritized and overrides the other. The primary application of this fact is to make demo dashing easier, but it could also be used for other situations where one would want to make dash redirecting easier.
+
+The following is the basic order of input priority:
+
+$$\text{Controller D-Pad} > \text{Controller Analog Stick} > \text{Keyboard Arrows} > \text{Keyboard Rebinds}$$
+
+If directions from two or more sources are input simultaneously, the one with highest priority will override the rest.
 
 \chapter{Entities}
 
