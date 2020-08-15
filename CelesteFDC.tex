@@ -1,0 +1,528 @@
+\documentclass[oneside]{book}
+
+\usepackage{array}
+\usepackage{float}
+\usepackage{todonotes}
+\usepackage{makecell}
+
+\newcommand{\s}{\textbf{s}}
+\newcommand{\su}{\textbf{u}}
+
+\title{The Celeste Frame Data Catalog}
+\author{DeathKontrol}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\chapter{Introduction}
+
+This document is an attempt to catalog ALL relevant information for how game mechanics work in Celeste. Most of the research has been done by myself using the TAS tools to execute moves frame by frame and examine position and speed information. Some of the information here may be credited to other players, possibly due to their own testing or experience, be it with TAS or code modding. I make every attempt to have the information be as accurate as possible and test it myself. I currently cannot offer any experimental evidence to prove these findings, but in the future I may try to compile a library of TAS scripts with a test map to demonstrate these concepts, at least the more interesting ones.
+
+The document you are reading is currently in beta. It is highly likely that there are inaccuracies and missing data. Please feel free to reach out to me on Discord at DeathKontrol\#7106 for corrections, or to request or submit additional information. I'm also happy to try to answer frame-data related questions, or learn about new tech that I haven't seen before. Celeste is full of hidden gems and there's always something new that I haven't seen yet.
+
+\section{Units}
+
+The fundamental unit of distance in Celeste is a pixel. The basic ground is made up of foreground tiles, which are $8\times8$ pixels (these cannot be subdivided). Speed is measured in pixels per second (px/s), this unit will be denoted by a bold face \s. Acceleration is measured in speed per frame (\s/f), which is pixels per second per frame (px/sf). There are actually two different speed measurements: \textit{speed} measures how fast Madeline "should" move on the current frame, while \textit{velocity} measures how fast Madeline actually travels given instantaneous environmental factors\todo{this probably needs to be understood and explained better}. The Y-axis is reversed, so negative Y speed means traveling up.
+
+One frame is exactly 17ms, and therefore the game runs 2\% faster than 60fps.\todo{verify this} Since the in-game timer is programmed at 60 frames per second, that means the timer is 2\% faster than real time.
+
+Thirds are rounded off, so 0.33*6=2.00. Two-thirds are truncated in this document instead of rounded, so it will be written as 0.66 instead of 0.67.
+
+\section{Physical Constants}
+
+The following table is fundamentally what "defines" Madeline:
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Hurtbox&\makecell[l]{$8\times9$ pixels,\\ 2 pixels above ground}\\
+\hline
+Hurtbox (Crouching)&$8\times 4$ pixels\\
+\hline
+Hitbox&$8\times 2$ pixels\\
+\hline
+\end{tabular}
+\caption{Madeline data}
+\end{table}
+
+The following basic numbers always apply to Madeline's horizontal motion, except under specific conditions such as being underwater, in space (end of Core), or using [extended] variants to change physics:
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Walking Speed&90.00 \s\\
+\hline
+Ground Acceleration&16.66 \s/f\\
+\hline
+Ground Friction&-6.66 \s/f\\
+\hline
+Air Acceleration&10.83 \s/f\\
+\hline
+Air Friction&-4.33 \s/f\\
+\hline
+\end{tabular}
+\caption{Horizontal speed}
+\end{table}
+
+The maximum walking speed of 90 applies both on the ground and in the air. If you are going slower than this speed, you will accelerate at the ground or air acceleration rate until you reach it.
+
+If you are traveling faster than walking speed and holding in the same direction you are traveling, you will decelerate at the rate of friction.
+
+If you are holding opposite to the direction you are traveling, or not pressing any direction, you will decelerate at the acceleration rate. In the former scenario, your speed can rollover 0 on the frame you reverse directions.
+
+The next table shows information for how Madeline's vertical speed changes
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Gravity&+15.00 \s/f\\
+\hline
+Terminal Fall Speed&+160.00 \s\\
+\hline
+Fast Fall Acceleration&5.00 \s/f\\
+\hline
+Fast Fall Speed&+240.00 \s\\
+\hline
+\end{tabular}
+\caption{Vertical speed}
+\end{table}
+
+If you are falling slower than 160, you will accelerate at the rate of gravity whether or not you are holding down. However, this can be affected by holding jump at certain times, see \textit{jumping}.\todo{figure out how to link things like this} If your speed is between 160 and 240, you will accelerate +5\s/f if you are holding down, or -5\s/f if you are not holding down, until reaching one of these terminal speeds.
+
+Your speed must land on 160 for at least one frame before entering fast fall, it will not roll over. If you are traveling at 150 and hold down, you will be going 160 on the next frame, and then 165 on the next.
+
+\chapter{Basic Mechanics}
+
+\section{Jump}
+
+Pressing and holding jump has the following behavior:
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Frame&Y Speed\\
+\hline
+1-12&-105.00 \s\\
+\hline
+13-17&+15.00 \s/f (to -30.00 \s)\\
+\hline
+18-21&+7.50 \s/f (to 0.00 \s)\\
+\hline
+22-27&+7.50 \s/f (to +45.00 \s)\\
+\hline
+28-34&+15.00 \s/f (to +150.00 \s)\\
+\hline
+35&+10.00 \s/f (to +160.00 \s)\\
+\hline
+35-38&+160.00 \s\\
+\hline
+39&Land\\
+\hline
+\end{tabular}
+\caption{Vertical Jump Speeds}
+\end{table}
+
+If the jump button is released any time during the jump, Madeline will immediately begin to accelerate downwards at the rate of gravity (+15.00\s /f). However, if the jump button is held whenever Madeline's speed is between -40.00 and +40.00, gravity is halved to +7.50 \s/f  for the next frame, no matter what caused Madeline to become airborne.
+
+Madeline can jump up to a height of slightly higher than 3 tiles. When jumping off the ground, Madeline gains +40.00 speed in whatever horizontal direction the player is currently holding, if any. The jump can be buffered up to 5 frames early and Madeline will jump on the first possible frame.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+-26.75 px&Max Height\\
+\hline
++40.00 \s &Horizontal Jump Boost\\
+\hline
+5 frames&Buffer Window\\
+\hline
+\end{tabular}
+\caption{Miscellaneous Jump Data}
+\end{table}
+
+\subsection{Jumping from Walls}
+
+While climbing or next to a wall in the air, Madeline can execute 3 different types of wall jumps. A \textit{Climb Jump} is performed by holding grab and jumping without pressing away from the wall. A \textit{Wall Jump} is performed by pressing away from the wall and jumping (with or without holding grab), or by pressing towards the wall and jumping with grab released. Finally, a \textit{Neutral Jump} is performed by releasing the grab button and left and right buttons before jumping.
+
+Fortunately for the sake of simplicity, all three types of wall jumps have the exact same vertical behavior as a standard grounded jump. However, their horizontal behavior changes.
+
+Madeline can jump from walls even from 2 pixels away.
+
+\subsection{Climb Jump}
+
+\textit{Climb Jumping} produces no horizontal speed; Madeline simply jumps straight up. She can climb to the top of ledges with spikes or spinners on top and jump over without dying. If you press away from the wall after jumping within 11 frames, the climb jump will become a wall jump, see \textit{Wall Boost}\todo{link}. Climb jumps are the only type of jumps that consume stamina: They cost exactly 27.5 stamina, see \textit{Climbing}
+
+\subsection{Wall Jump}
+
+\textit{Wall Jumping} sends Madeline away from the wall at a speed of 130. For the next 12 frames, she will decelerate at the rate of air friction until reaching the walking speed of 90, regardless of right/left inputs. Madeline also immediately turns around to face away from the wall.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|l|}
+\hline
+Frame&Speed (away from wall)&Description\\
+\hline
+1&130.00 \s &Fixed\\
+\hline
+2-10&-4.33 \s/f (to 91.00)&Cannot be affected\\
+\hline
+11&90.00 \s &\makecell[l]{Control of horizontal motion\\ is regained on the next frame}\\
+\hline
+\end{tabular}
+\caption{Wall Jump Horizontal Speed}
+\end{table}
+
+\subsection{Neutral Jump}
+
+\textit{Neutral Jumping} also sends Madeline away from the wall at a speed of 130, however, the subsequent trajectory can be controlled immediately. With neutral jumps, it is possible to jump away from a wall and move back to the wall to arrive higher than the starting point. This enables the player to scale vertical faces or stall in place on walls without consuming stamina.
+
+Grab must be released for 1 frame before beginning the jump, or else it will be a climb jump. Right and left must be released on the frame the jump is started, but may be held on any other frames.
+
+A neutral jump starts Madeline off with 130 speed away from the wall, but the player regains control immediately on the next frame. Therefore if the player holds away from the wall, Madeline will lose speed at the rate of air friction and the trajectory will match that of a wall jump, but if the player holds towards the wall or doesn't hold either direction, Madeline will lose speed at the rate of air acceleration, allowing her to move back towards the wall faster. This is why it is possible to get back to the wall higher up with a neutral jump than with a wall jump.
+
+When a neutral jump is performed, Madeline does not turn away from the wall, but instead remains facing it unless the direction away from the wall is pressed.
+
+\subsection{Crouch Jump}
+
+If Madeline crouches and jumps, she will remain crouched until her vertical speed hits 0. For a normal full-height jump, this occurs on frame 21. The crouch state cannot be affected by basic movement; holding down does not matter. This rule applies to other sources that cause Madeline to become airborne while crouched, and the crouch state can be preserved by climb jumping before reaching 0 speed.
+
+\section{Dashing}
+
+The base dash speed is 240. Diagonal dashes go at the same speed, so the $x$ and $y$ coordinates are $\frac{\sqrt{2}}{2}\cdot 240=169.71$
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Horizontal/Vertical Speed&240.00 \s\\
+\hline
+Diagonal Speed (x and y)&169.71 \s\\
+\hline
+\end{tabular}
+\caption{Base Dash Speeds}
+\end{table}
+
+Dashing lasts for 15 frames. The following table shows the different stages of a dash.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Frame&Event\\
+\hline
+1&Startup\\
+\hline
+2-4&Freeze Frames\\
+\hline
+5-9&Dash Cooldown\\
+\hline
+10-14&Dash Recharge\\
+\hline
+15&End Frame\\
+\hline
+\end{tabular}
+\caption{Dash Breakdown}
+\end{table}
+
+Madeline stops moving the same frame that the button is pressed. On frames 2-4, the entire game including the speedrun clock is frozen. During frames 5-15 Madeline is in the dash state and maintains a fixed trajectory. If Madeline leaves the ground before frame 10 her dash will not recharge, but if she leaves the ground on or before frame 10 the dash will be recharged. Madeline's dash speed ends on frame 15, although other dash mechanics still apply on this frame: for example, she can still hyper or super, and she cannot start a new dash until the next frame.
+
+Dashes can also be buffered up to 5 frames early, like jumps.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+5 frames&Buffer Window\\
+\hline
+\end{tabular}
+\caption{Miscellaneous Dash Data}
+\end{table}
+
+\subsection{Horizontal Speed}
+
+The $x$ speed for horizontal and diagonal dashes is actually only a minimum: If Madeline's speed is less than this, she will be brought up to this speed when the dash starts. If however her speed is greater than this number when the dash starts, the $x$ value of the dash will not be changed.
+
+For example, if Madeline starts a horizontal dash while traveling at 200 speed, she will immediately be set to 240, the minimum. However, if she dashes diagonally, the dash speed will be (200,169.71). Therefore, she will not dash at a 45 degree angle. The horizontal speed will not change for the duration of the dash.
+
+Furthermore, Madeline's horizontal speed is immediately set to 160 on the end frame, regardless of how fast she was going during the dash. When an up-diagonal dash ends, her horizontal speed is set to $\frac{\sqrt{2}}{2}\cdot 160.00=113.14$ and her vertical speed is set to -84.85. When a down-diagonal dash ends, Madeline's horizontal speed is not reset so long as she is in the air (If she is grounded, it is set to 160). This is a critical component of Ultras, see \textit{Ultra (Disambiguation)}.
+
+\section{Climbing}
+
+Climbing refers to anything having to do with holding grab on a wall. Various aspects of climbing consume stamina. This section will cover climbing speeds and stamina usage. Madeline can grab walls even from 1 pixel away.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Climbing Up&-45.00 \s\\
+\hline
+Climbing Down&+80.00 \s\\
+\hline
+Climbing Acceleration&15.00 \s/f\\
+\hline
+Grind Acceleration&+1.95 \s/f\\
+\hline
+"Catch" Speed&+32.00 \s\\
+\hline
+Grab Startup& 6f\\
+\hline
+\end{tabular}
+\caption{Climbing Speed}
+\end{table}
+
+Madeline accelerates up and down the wall at the same rate at which she accelerates horizontally while walking on the ground. Grinding is when Madeline is pressing towards the wall without grabbing, or trying to grab without having stamina. Grind acceleration is the rate at which Madeline accelerates downwards if traveling less than 160 while grinding. Madeline's speed is set to the "Catch" speed if she is traveling faster than 32 downwards and grabs a wall. For the first 6 frames of a grab, no stamina is consumed.
+
+The next table shows stamina usage in various situations. Certain climbing maneuvers consume stamina, which does not refill until Madeline is standing or interacts with an entity which refills stamina. In vanilla Celeste, all entities which refill dashes also refill stamina, such as dash refills, feathers and dream blocks. Stamina units shall be denoted  \su
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Maximum Stamina&110 \su\\
+\hline
+Stationary Grab&10 \su/second\\
+\hline
+Climbing Up&1 \su/px\\
+\hline
+Climbing Down&0 \su\\
+\hline
+Climb Jump&27.5 \su\\
+\hline
+Critical Stamina&20 \su\\
+\hline
+\end{tabular}
+\caption{Stamina Usage}
+\end{table}
+
+The maximum amount of time Madeline can grab a wall before sliding down is 11 seconds. Attempting to grab while out of stamina causes Madeline to grind. Climb jumps are possible so long as Madeline's stamina is greater than zero; if she has less than 27.5 stamina, it will all be consumed for the final climb jump. Attempting to climb jump while out of stamina results in a wall jump.
+
+Based on the maximum jump height, climb jumping up a wall uses only slightly more stamina per pixel as climbing up, assuming full-height jumps. However, climb jumping up is faster.
+
+When the Critical Stamina is reached, Madeline will begin flashing red. She can continue to hold or climb on the wall she is currently grabbing, but cannot initiate a new grab. She is also unable to grab entities such as Theo or Jellyfish while below the Critical Stamina threshold.
+
+\chapter{Advanced Mechanics}
+
+The distinction between which mechanics are basic, advanced, and technical is somewhat arbitrary. My goal here is to separate these mechanics into categories mostly based on how well they are understood by the community, and to a degree how much they are used in the game. The "Basic" mechanics in Chapter 2 are essentially fundamental mechanics which are required for basic completion of the game, and everyone who has beaten Forsaken City should be able to execute these moves easily. The exception here is neutral jumps, but these fit into this section with the rest of the wall jump tech better than anywhere else.
+
+The first three "Advanced" mechanics, being Wall Bounce, Hyper Dash, and Wave Dash, are taught at the end of the game and required for the final few levels. Super Dashes are not explicitly taught, but are simple enough that most players usually figure them out. Ultras and Demo Dashes are not taught.
+
+The unifying theme between these mechanics and what separates them from the "Technical" mechanics in Chapter 5 are that these are all used extensively in speedrunning and custom maps, whereas the technical mechanics are more obscure and specific. While most players who have finished the game 100\% are at least familiar with the advanced mechanics, the technical mechanics are lesser known or understood and have more niche applications.
+
+\section{Wall Bounce}
+
+A wall bounce is executed by dashing straight up while next to a wall, and jumping off the wall while in the dash state. Wall bounces are fast and give a great amount of height, therefore they can be required in maps. They are taught on flag 8 in 7B and also required for flag 7, some C-sides and Farewell.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Frames&Vertical Speed\\
+\hline
+1-15&-160.00 \s\\
+\hline
+16-23&+15.00 \s/f (to -40.00)\\
+\hline
+24-34&+7.50 \s/f (to +42.50)\\
+\hline
+35-41&+15.00 \s/f (to +147.50)\\
+\hline
+42-&+160.00 \s\\
+\hline
+Horizontal Speed&170.00\\
+\hline
+\end{tabular} 
+\caption{Wall Bounce Sequence}
+\end{table}
+
+Wall bouncing gives an initial vertical speed of -160.00 which can be maintained for the first 15 frames by holding jump. Then normal gravity kicks in, with gravity halving applying to the top of the jump as usual. Releasing jump early causes gravity to start immediately. The table shows vertical speeds assuming the jump button is held for the entire sequence.
+
+Wall bouncing also sends Madeline away from the wall at a horizontal speed of 170, which can be controlled immediately.
+
+\begin{table}[h]
+\begin{tabular}{|l|l|}
+\hline
+Factor&Horizontal Pixels\\
+\hline
+Vertical Corner Correction&4 px\\
+\hline
+"Perfect" Alignment&1 px\\
+\hline
+Wall Bounce Forgiveness&5 px\\
+\hline
+Total& 10 px\\
+\hline
+\end{tabular}
+\caption{Wall Bounce Spacing}
+\end{table}
+
+Horizontal alignment for wall bounces is incredibly forgiving: The player has a 10 pixel margin (larger than a tile) to line up a wall bounce. If the player is further than 4 pixels "under" the wall, Madeline will "bonk" her head, and more than 5 pixels away will result in no jump. If there are spikes or spinners under the wall, corner correction is not available, and the wall bounce margin is reduced to 6 pixels. If Madeline is dashing up towards a zig-zag of one tile wide ledges, the possibility to wall bounce is guaranteed.
+
+Wall bounces can also be started up to 5 frames after the dash ends, therefore up to 20 frames after the dash is started. This is a forgiveness mechanic designed to help them feel more fair.
+
+\section{Hyper Dash}
+
+\subsection{Extending}
+
+\subsection{Wavedash}
+
+\section{Super Dash}
+
+\section{Reversal}
+
+\section{Ultra (Disambiguation)}
+
+\subsection{Ultra Boost}
+
+\section{Demo Dash}
+
+\subsection{Demo Hyper}
+
+\chapter{Spike mechanics}
+
+\subsection{basically Kii's gif}
+
+\chapter{Technical Mechanics}
+
+\section{Corner Correction}
+
+\section{Coyote}
+
+\section{Dash Cancel}
+
+\section{Corner Boost}
+
+\subsection{Reverse Corner Boost}
+
+\section{Block Boost}
+
+\section{Wall Boost}
+
+\section{Transition Wall Bounce}
+
+\section{Transition Drop}
+
+\section{Water Boost}
+
+\section{Ceiling Pop}
+
+\chapter{Entities}
+
+\chapter{Notes}
+
+
+
+Coyote:
+For the first 5 frames after walking or dashing off a platform, and the first 9 frames after exiting a dream block (in any direction except vertical), the player enters the coyote state. The player may jump or dash during coyote, as well as super or hyper dash. See Coyote super/hyper.
+
+Fast fall: (remember to include jumping will holding down)
+Acceleration from falling:
+Jumping while holding down:
+Terminal velocity: 240.00
+
+
+
+Climbing:
+Stamina: 110. Neutral grab consumes 10 stamina every second (1 every 6 frames). Grab animation activates on frame 2. 5 frame grace period before stamina consumption, so stamina is consumed on frame 11, 17, 23, etc.
+Up-climb stamina consumption: ()
+Down-climb stamina consumption: (0?)
+Critical stamina threshold: (27.5?)
+Determine critical stamina behavior (theory: can continue holding current wall, can't grab new wall, can stamina jump if stamina > 0)
+See Jump off wall, Climb jump, Neutral jump, Wall bounce
+
+Jump off wall:
+Velocity: (-105.00 Y?)
+Check differences between inputs (pressing in, pressing out, holding or not holding grab)
+
+Climb jump / Stamina jump:
+Velocity: (-105.00 Y, 0.00 X?)
+Stamina consumption: (110/4=27.5?)
+
+Neutral jump:
+Velocity (seems to be -105.00 Y, check X)
+
+Coyote super/hyper:
+If the player dashes during the coyote state, the state is maintained during the 4 freeze frames of the dash. After the freeze frames end, the player will still be in coyote for the remainder of the coyote time, minus one frame. For example, if the player walks off a platform and dashes on the first coyote frame, then they will have the coyote state during the next 7 frames, 4 for the dash freeze frames and 3 for the rest of the normal duration of the platform coyote (the first was used), minus 1. If the player dashed horizontal during the coyote frames, the player can perform a super dash by jumping during the remainder of these coyote frames. However, if the player dashed down-diagonal, the jump button must be pressed the first active frame of the dash. The jump can be buffered on the same frame that the dash is started.
+
+Demo dash:
+Demo dash is dashing horizontal, up, or up-diagonal with a crouched hurtbox, which is 4 pixels tall instead of 8. To perform this move, the player must be holding down during the first frame of the dash, and then be holding the direction the player wishes to dash in (not down) during the fifth frame of the dash. Speed is the same as a regular dash. This can be used to go through gaps in spinners than cannot otherwise be cleared. See Demo hyper.
+
+Entering dream blocks in crouched state:
+There are two ways to enter a dream block in a crouched state: Either by standing on top of it and dashing down or down diagonal, or by demo dashing into it. 
+
+Snapping to ground from dash: If you jump for 1 frame, you will be -105/60 = -1.75 pixels off the ground, but if you dash, you will be snapped back to the ground immediately (your Y-position will be returned to ground position and your state send to Ground the frame you press dash).
+
+Super dash:
+
+Hyper dash:
+
+Wave dash:
+
+Reversal:
+
+Ultra: The term “Ultra” is somewhat ambiguous in the Celeste community. For the purposes of this document, “ultra” will refer to the simple fact that if you dash down-diagonal, you get a speed boost when you land, so that's it:
+1. Dash down-diagonal
+2. Land on the ground. Your X-speed will be multiplied by 1.2
+The boost can be applied even after the dash ends. This is what players normally do to get an “ultra dash.” The boost 
+If you are within 1 pixel of the ground, it is possible to bunny hop before the ultra boost triggers.
+
+Demo hyper:
+
+Wall bounce:
+Margin of error: 4 pixels too far away, or 5 pixels too close, so including the 1 pixel of “perfect alignment,” there is a 10 pixel window to perform a wall bounce.
+
+Corner boost:
+
+Water boost:
+
+Spike jump:
+
+Block boost:
+
+
+
+Map mechanics  (?):
+
+Spike
+Trigger spike
+Spinner
+
+Spring
+Crumble block
+Falling block
+Refill
+Zip mover
+Dream block:
+You get 3 freeze frames upon exiting a dream block, just like when starting a dash.
+
+Mr. Oshiro
+Green bubble
+Move block
+Cloud
+Disappearing cloud
+Wind
+Snowball
+Red bubble
+Swap block
+Seeker
+Theo
+Kevin block
+Bumper
+Feather
+Badeline boss
+Badeline booster
+Core block:
+	Fire mode:
+	If the block disappears under you, you get 5 coyote frames
+	If you are holding the side of the wall when it disappears, you get 2 coyote + wall frames, then 	4 more coyote frames
+	Ice mode:
+	If the block disappears under you, you get 5 coyote frames
+	If you are holding the side of the block when it disappears, you get no coyote frames.
+Fireball
+Ice ball
+Wall booster
+Wall booster (ice)
+Core switch
+Rising/falling lava
+Double refill
+Puffer
+Jelly
+Bird
+Power box
+
+\end{document}
